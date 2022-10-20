@@ -114,8 +114,8 @@ def sparse_to_tuple(sparse_mx):
     return coords, values, shape
 
 
-def create_trainvaltest_split(dataset, seed=1234, testing=False, datasplit_path=None, 
-                              datasplit_from_file=False, verbose=True, rating_map=None, 
+def create_trainvaltest_split(dataset, seed=1234, testing=False, datasplit_path=None,
+                              datasplit_from_file=False, verbose=True, rating_map=None,
                               post_rating_map=None, ratio=1.0):
     """
     Splits data set into train/val/test sets from full bipartite adjacency matrix. Shuffling of dataset is done in
@@ -193,7 +193,7 @@ def create_trainvaltest_split(dataset, seed=1234, testing=False, datasplit_path=
         data = np.array([post_rating_map[r] for r in class_values[train_labels]]) + 1.
     data = data.astype(np.float32)
 
-    rating_mx_train = sp.csr_matrix((data, [u_train_idx, v_train_idx]), 
+    rating_mx_train = sp.csr_matrix((data, [u_train_idx, v_train_idx]),
                                     shape=[num_users, num_items], dtype=np.float32)
 
     return u_features, v_features, rating_mx_train, train_labels, u_train_idx, v_train_idx, \
@@ -248,44 +248,60 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
 
     group_nodes_ratings = np.where(M_group)[0]
     item_group_nodes_ratings = np.where(M_group)[1]
-    
+
     user_ratings = M_user[np.where(M_user)]
     group_ratings = M_group[np.where(M_group)]
 
-    u_nodes_ratings, v_nodes_ratings = u_nodes_ratings.astype(np.int64), v_nodes_ratings.astype(np.int32)
-    ratings = ratings.astype(np.float64)
+    user_nodes_ratings, item_user_nodes_ratings = user_nodes_ratings.astype(np.int64), item_user_nodes_ratings.astype(np.int32)
+    user_ratings = user_ratings.astype(np.float64)
 
-    u_nodes = u_nodes_ratings
-    v_nodes = v_nodes_ratings
+    group_nodes_ratings, item_group_nodes_ratings = group_nodes_ratings.astype(np.int64), item_group_nodes_ratings.astype(np.int64)
+    group_ratings = group_ratings.astype(np.float64)
 
-    print('number of users = ', len(set(u_nodes)))
-    print('number of item = ', len(set(v_nodes)))
+    user_nodes = user_nodes_ratings
+    item_user_nodes = item_user_nodes_ratings
+
+    group_nodes = group_nodes_rantings
+    item_group_nodes = item_group_nodes_ratings
+
+    print('number of users = ', len(set(user_nodes)))
+    print('number of item_user = ', len(set(item_user_nodes)))
+    print('number of groups = ', len(set(group_nodes)))
+    print('number of item_group = ', len(set(item_group_nodes)))
 
     neutral_rating = -1  # int(np.ceil(np.float(num_classes)/2.)) - 1
 
-    # assumes that ratings_train contains at least one example of every rating type
+    # assumes that user ratings and group ratings combined contains at least one example of every rating type
+    ratings = np.append(user_ratings, group_ratings)
     rating_dict = {r: i for i, r in enumerate(np.sort(np.unique(ratings)).tolist())}
 
-    labels = np.full((num_users, num_items), neutral_rating, dtype=np.int32)
-    labels[u_nodes, v_nodes] = np.array([rating_dict[r] for r in ratings])
+    labels_user = np.full((num_users, num_items), neutral_rating, dtype=np.int32)
+    labels_user[user_nodes, item_user_nodes] = np.array([rating_dict[r] for r in user_ratings])
 
-    for i in range(len(u_nodes)):
-        assert(labels[u_nodes[i], v_nodes[i]] == rating_dict[ratings[i]])
+    for i in range(len(user_nodes)):
+        assert(labels_user[user_nodes[i], item_user_nodes[i]] == rating_dict[user_ratings[i]])
 
-    labels = labels.reshape([-1])
+    labels_user = labels_user.reshape([-1])
+
+    labels_group = np.full((num_groups, num_items), neutral_rating, dtype=np.int32)
+    labels_group[group_nodes, item_group_nodes] = np.array([rating_dict[r] for r in group_ratings])
+
+    for i in range(len(group_nodes)):
+        assert(labels_group[group_nodes[i], item_group_nodes[i]] == rating_dict[group_ratings[i]])
+
+    labels_group = labels_group.reshape([-1])
 
     # number of test and validation edges
-
-    num_train = np.where(Otraining)[0].shape[0]
-    num_test = np.where(Otest)[0].shape[0]
+    num_train = np.where(O_group_train)[0].shape[0]
+    num_test = np.where(O_group_test)[0].shape[0]
     num_val = int(np.ceil(num_train * 0.2))
     num_train = num_train - num_val
 
-    pairs_nonzero_train = np.array([[u, v] for u, v in zip(np.where(Otraining)[0], np.where(Otraining)[1])])
-    idx_nonzero_train = np.array([u * num_items + v for u, v in pairs_nonzero_train])
+    pairs_nonzero_train = np.array([[m, v] for m, v in zip(np.where(O_group_train)[0], np.where(O_group_test)[1])])
+    idx_nonzero_train = np.array([m * num_items + v for m, v in pairs_nonzero_train])
 
-    pairs_nonzero_test = np.array([[u, v] for u, v in zip(np.where(Otest)[0], np.where(Otest)[1])])
-    idx_nonzero_test = np.array([u * num_items + v for u, v in pairs_nonzero_test])
+    pairs_nonzero_test = np.array([[m, v] for m, v in zip(np.where(O_group_test)[0], np.where(O_group_test)[1])])
+    idx_nonzero_test = np.array([m * num_items + v for m, v in pairs_nonzero_test])
 
     # Internally shuffle training set (before splitting off validation set)
     rand_idx = list(range(len(idx_nonzero_train)))
@@ -307,17 +323,17 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
     train_pairs_idx = pairs_nonzero[num_val:num_train + num_val]
     test_pairs_idx = pairs_nonzero[num_train + num_val:]
 
-    u_test_idx, v_test_idx = test_pairs_idx.transpose()
-    u_val_idx, v_val_idx = val_pairs_idx.transpose()
-    u_train_idx, v_train_idx = train_pairs_idx.transpose()
+    m_test_idx, v_test_idx = test_pairs_idx.transpose()
+    m_val_idx, v_val_idx = val_pairs_idx.transpose()
+    m_train_idx, v_train_idx = train_pairs_idx.transpose()
 
     # create labels
-    train_labels = labels[train_idx]
-    val_labels = labels[val_idx]
-    test_labels = labels[test_idx]
+    train_labels = labels_group[train_idx]
+    val_labels = labels_group[val_idx]
+    test_labels = labels_group[test_idx]
 
     if testing:
-        u_train_idx = np.hstack([u_train_idx, u_val_idx])
+        m_train_idx = np.hstack([m_train_idx, m_val_idx])
         v_train_idx = np.hstack([v_train_idx, v_val_idx])
         train_labels = np.hstack([train_labels, val_labels])
         # for adjacency matrix construction
@@ -326,26 +342,26 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
     class_values = np.sort(np.unique(ratings))
 
     # make training adjacency matrix
-    rating_mx_train = np.zeros(num_users * num_items, dtype=np.float32)
+    rating_mx_train = np.zeros(num_groups * num_items, dtype=np.float32)
     '''Note here rating matrix elements' values + 1 !!!'''
     if post_rating_map is None:
-        rating_mx_train[train_idx] = labels[train_idx].astype(np.float32) + 1.
-    else:
+        rating_mx_train[train_idx] = labels_group[train_idx].astype(np.float32) + 1.
+    else: #not required
         rating_mx_train[train_idx] = np.array([post_rating_map[r] for r in class_values[labels[train_idx]]]) + 1.
 
-    rating_mx_train = sp.csr_matrix(rating_mx_train.reshape(num_users, num_items))
+    rating_mx_train = sp.csr_matrix(rating_mx_train.reshape(num_groups, num_items))
 
 
-    if u_features is not None:
+    if u_features is not None: #not reuired
         u_features = sp.csr_matrix(u_features)
         print("User features shape: " + str(u_features.shape))
 
-    if v_features is not None:
+    if v_features is not None: #not required
         v_features = sp.csr_matrix(v_features)
         print("Item features shape: " + str(v_features.shape))
 
-    return u_features, v_features, rating_mx_train, train_labels, u_train_idx, v_train_idx, \
-        val_labels, u_val_idx, v_val_idx, test_labels, u_test_idx, v_test_idx, class_values
+    return u_features, v_features, rating_mx_train, train_labels, m_train_idx, v_train_idx, \
+        val_labels, m_val_idx, v_val_idx, test_labels, m_test_idx, v_test_idx, class_values
 
 
 def load_official_trainvaltest_split(dataset, testing=False, rating_map=None, post_rating_map=None, ratio=1.0):
@@ -472,7 +488,7 @@ def load_official_trainvaltest_split(dataset, testing=False, rating_map=None, po
         train_labels = np.hstack([train_labels, val_labels])
         # for adjacency matrix construction
         train_idx = np.hstack([train_idx, val_idx])
-    
+
     class_values = np.sort(np.unique(ratings))
 
     # make training adjacency matrix
