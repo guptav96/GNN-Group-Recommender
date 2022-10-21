@@ -307,6 +307,9 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
     pairs_nonzero_test = np.array([[m, v] for m, v in zip(np.where(O_group_test)[0], np.where(O_group_test)[1])])
     idx_nonzero_test = np.array([m * num_items + v for m, v in pairs_nonzero_test])
 
+    pairs_nonzero_user_item = np.array([[u, v] for m, v in zip(np.where(M_user)[0], np.where(M_user)[1])])
+    idx_nonzero_user_item = np.array([u * num_items + v for m, v in pairs_nonzero_user_item])
+
     # Internally shuffle training set (before splitting off validation set)
     rand_idx = list(range(len(idx_nonzero_train)))
     np.random.seed(42)
@@ -345,6 +348,10 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
 
     class_values = np.sort(np.unique(ratings))
 
+    # make user-item adjacency matrix
+    rating_ux = np.full((num_users, num_items), neutral_rating, dtype=np.int32)
+    rating_ux[idx_nonzero_user_item] = labels_user[idx_nonzero_user_item].astype(np.float32) + 1.
+
     # make training adjacency matrix
     rating_mx_train = np.zeros(num_groups * num_items, dtype=np.float32)
     '''Note here rating matrix elements' values + 1 !!!'''
@@ -354,7 +361,8 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
         rating_mx_train[train_idx] = np.array([post_rating_map[r] for r in class_values[labels[train_idx]]]) + 1.
 
     rating_mx_train = sp.csr_matrix(rating_mx_train.reshape(num_groups, num_items))
-
+    rating_ux = sp.csr_matrix(rating_ux.reshape(num_users, num_items))
+    group_user_adj = sp.csr_matrix(M_group_user.reshape(num_groups, num_users))
 
     if u_features is not None: #not required
         u_features = sp.csr_matrix(u_features)
@@ -364,7 +372,7 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
         v_features = sp.csr_matrix(v_features)
         print("Item features shape: " + str(v_features.shape))
 
-    return u_features, v_features, rating_mx_train, train_labels, m_train_idx, v_train_idx, \
+    return u_features, v_features, rating_ux, rating_mx_train, group_user_adj, train_labels, m_train_idx, v_train_idx, \
         val_labels, m_val_idx, v_val_idx, test_labels, m_test_idx, v_test_idx, class_values
 
 

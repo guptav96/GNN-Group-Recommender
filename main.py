@@ -233,7 +233,7 @@ if args.data_name in ['flixster', 'douban', 'yahoo_music']:
     ) = load_data_monti(args.data_name, args.testing, rating_map, post_rating_map)
 elif args.data_name in ['camra2011']:
     (
-        u_features, v_features, adj_train, train_labels, train_w_indices, train_v_indices,
+        u_features, v_features, adj_user, adj_train, adj_group_user, train_labels, train_w_indices, train_v_indices,
         val_labels, val_w_indices, val_v_indices, test_labels, test_w_indices, 
         test_v_indices, class_values
     ) = load_data_monti(args.data_name, args.testing, rating_map, post_rating_map)
@@ -314,7 +314,9 @@ if args.reprocess:
 dataset_class = 'MyDynamicDataset' if args.dynamic_train else 'MyDataset'
 train_graphs = eval(dataset_class)(
     'data/{}{}/{}/train'.format(*data_combo),
-    adj_train, 
+    adj_user,
+    adj_train,
+    adj_group_user, 
     train_indices, 
     train_labels, 
     args.hop, 
