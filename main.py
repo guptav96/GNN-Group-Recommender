@@ -11,8 +11,8 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from util_functions import *
 # from data_utils import *
 from preprocessing import *
-# from train_eval import *
-# from models import *
+from train_eval import *
+from models import *
 
 import traceback
 import warnings
@@ -55,7 +55,7 @@ parser.add_argument('--testing', action='store_true', default=False,
 parser.add_argument('--no-train', action='store_true', default=False,
                     help='if set, skip the training and directly perform the \
                     transfer/ensemble/visualization')
-parser.add_argument('--debug', action='store_true', default=True,
+parser.add_argument('--debug', action='store_true', default=False,
                     help='turn on debugging mode which uses a small number of data')
 parser.add_argument('--data-name', default='camra2011', help='dataset name')
 parser.add_argument('--data-appendix', default='',
@@ -330,7 +330,9 @@ train_graphs = eval(dataset_class)(
 dataset_class = 'MyDynamicDataset' if args.dynamic_test else 'MyDataset'
 test_graphs = eval(dataset_class)(
     'data/{}{}/{}/test'.format(*data_combo),
+    adj_user,
     adj_train,
+    adj_group_user,
     test_indices,
     test_labels,
     args.hop,
@@ -345,7 +347,9 @@ if not args.testing:
     dataset_class = 'MyDynamicDataset' if args.dynamic_val else 'MyDataset'
     val_graphs = eval(dataset_class)(
         'data/{}{}/{}/val'.format(*data_combo),
+        adj_user,
         adj_train,
+        adj_group_user,
         val_indices,
         val_labels,
         args.hop,

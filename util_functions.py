@@ -95,6 +95,7 @@ class MyDataset(InMemoryDataset):
             self.links = (links[0][perm], links[1][perm])
             self.labels = labels[perm]
         super(MyDataset, self).__init__(root)
+        print("reading from:", self.processed_paths[0])
         self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
@@ -106,12 +107,16 @@ class MyDataset(InMemoryDataset):
 
     def process(self):
         # Extract enclosing subgraphs and save to disk
-        data_list = links2subgraphs(self.A_group_item_row, self.A_group_item_col, self.A_user_item_row, self.A_user_item_col, self.A_group_user_row, self.A_group_user_col, self.links, self.labels, self.h,
+        data_list = links2subgraphs(self.A_group_item_row, self.A_group_item_col, 
+                                    self.A_user_item_row, self.A_user_item_col,
+                                    self.A_group_user_row, self.A_group_user_col, 
+                                    self.links, self.labels, self.h,
                                     self.sample_ratio, self.max_nodes_per_hop,
                                     self.u_features, self.v_features,
                                     self.class_values, self.parallel)
 
         data, slices = self.collate(data_list)
+        print("saving to:", self.processed_paths[0])
         torch.save((data, slices), self.processed_paths[0])
         del data_list
 
@@ -172,7 +177,6 @@ def links2subgraphs(A_group_item_row,
     # extract enclosing subgraphs
     print('Enclosing subgraph extraction begins...')
     g_list = []
-    parallel = False
     if not parallel:
         with tqdm(total=len(links[0])) as pbar:
             for i, j, g_label in zip(links[0], links[1], labels):
@@ -228,20 +232,23 @@ def subgraph_extraction_labeling(ind, A_group_item_row, A_group_item_col, A_user
     group_visited, item_visited = set([ind[0]]), set([ind[1]])
     group_fringe, item_fringe = set([ind[0]]), set([ind[1]])
     user_nodes = []
-    user_dist = [0]
+    user_dist = []
     user_visited = set([])
     user_fringe = set([])
-    for dist in range(1, h+1):
+    for dist in range(1, 2):
         item_fringe, group_fringe = neighbors(group_fringe, A_group_item_row), neighbors(item_fringe, A_group_item_col)
         group_fringe = group_fringe - group_visited
         item_fringe = item_fringe - item_visited
         group_visited = group_visited.union(group_fringe)
         item_visited = item_visited.union(item_fringe)
         user_fringe_1, user_fringe_2 = neighbors(group_visited, A_group_user_row), neighbors(item_visited, A_user_item_col)
+        # print("len user fringe 1, group visited", len(user_fringe_1), len(group_visited))
+        # print("len user fringe 2, item  visited", len(user_fringe_2), len(item_visited))
         user_fringe_1 = user_fringe_1 - user_fringe
         user_fringe_2 = user_fringe_2 - user_fringe
-        user_fringe = user_fringe_1.union(user_fringe_2)
-        user_visited = user_fringe.union(user_fringe)
+        user_fringe = user_fringe_1
+        user_visited = user_visited.union(user_fringe)
+        # print("len user fringe_1, fringe_2, fringe, visited: ", len(user_fringe_1), len(user_fringe_2), len(user_fringe), len(user_visited))
         if sample_ratio < 1.0: # not required
             u_fringe = random.sample(u_fringe, int(sample_ratio*len(u_fringe)))
             v_fringe = random.sample(v_fringe, int(sample_ratio*len(v_fringe)))
@@ -279,6 +286,7 @@ def subgraph_extraction_labeling(ind, A_group_item_row, A_group_item_col, A_user
     num_nodes = len(group_nodes) + len(item_nodes) + len(user_nodes)
     node_labels = [x*3 for x in group_dist] + [x*3+1 for x in item_dist] + [x*3+2 for x in user_dist]
     max_node_label = 3*h + 2
+    # print("num nodes: ", num_nodes)
     y = class_values[y]
 
     # get node features
