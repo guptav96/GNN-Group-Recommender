@@ -40,17 +40,16 @@ def train_multiple_epochs(train_dataset,
     if train_dataset.__class__.__name__ == 'MyDynamicDataset':
         num_workers = mp.cpu_count()
     else:
-        num_workers = 0
+        num_workers = 2
     train_loader = DataLoader(train_dataset, batch_size, shuffle=True, 
                               num_workers=num_workers)
     if test_dataset.__class__.__name__ == 'MyDynamicDataset':
         num_workers = mp.cpu_count()
     else:
-        num_workers = 0
+        num_workers = 2
     test_loader = DataLoader(test_dataset, batch_size, shuffle=False, 
                              num_workers=num_workers)
 
-    print("Start Model Training...... Umm")
     model.to(device).reset_parameters()
     optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     start_epoch = 1
@@ -80,13 +79,11 @@ def train_multiple_epochs(train_dataset,
             rmses.append(eval_rmse(model, test_loader, device, show_progress=batch_pbar))
         else:
             rmses.append(np.nan)
-
         eval_info = {
             'epoch': epoch,
             'train_loss': train_loss,
             'test_rmse': rmses[-1],
         }
-
         if not batch_pbar:
             pbar.set_description(
                 'Epoch {}, train loss {:.6f}, test rmse {:.6f}'.format(*eval_info.values())
@@ -151,7 +148,6 @@ def num_graphs(data):
 
 def train(model, optimizer, loader, device, regression=False, ARR=0, 
           show_progress=False, epoch=None):
-    print("Start training")
     model.train()
     total_loss = 0
     if show_progress:
@@ -199,7 +195,6 @@ def eval_loss(model, loader, device, regression=False, show_progress=False):
             loss += F.mse_loss(out, data.y.view(-1), reduction='sum').item()
         else:
             loss += F.nll_loss(out, data.y.view(-1), reduction='sum').item()
-
         torch.cuda.empty_cache()
     return loss / len(loader.dataset)
 
@@ -323,8 +318,4 @@ def visualize(model, graphs, res_dir, data_name, class_values, num=5, sort_by='p
         class_values = np.linspace(min(class_values), max(class_values), 20, dtype=int).tolist()
     cbar = plt.colorbar(sm, cax=cbar_ax, ticks=class_values)
     cbar.ax.tick_params(labelsize=22)
-    f.savefig(os.path.join(res_dir, "visualization_{}_{}.pdf".format(data_name, sort_by)), 
-            interpolation='nearest', bbox_inches='tight')
-    
-    
-    
+    f.savefig(os.path.join(res_dir, "visualization_{}_{}.pdf".format(data_name, sort_by)), bbox_inches='tight')

@@ -55,7 +55,7 @@ parser.add_argument('--testing', action='store_true', default=False,
 parser.add_argument('--no-train', action='store_true', default=False,
                     help='if set, skip the training and directly perform the \
                     transfer/ensemble/visualization')
-parser.add_argument('--debug', action='store_true', default=False,
+parser.add_argument('--debug', action='store_true', default=True,
                     help='turn on debugging mode which uses a small number of data')
 parser.add_argument('--data-name', default='camra2011', help='dataset name')
 parser.add_argument('--data-appendix', default='',
