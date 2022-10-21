@@ -8,7 +8,7 @@ import random
 import argparse
 from shutil import copy, rmtree, copytree
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-# from util_functions import *
+from util_functions import *
 # from data_utils import *
 from preprocessing import *
 # from train_eval import *
@@ -55,18 +55,18 @@ parser.add_argument('--testing', action='store_true', default=False,
 parser.add_argument('--no-train', action='store_true', default=False,
                     help='if set, skip the training and directly perform the \
                     transfer/ensemble/visualization')
-parser.add_argument('--debug', action='store_true', default=False,
+parser.add_argument('--debug', action='store_true', default=True,
                     help='turn on debugging mode which uses a small number of data')
 parser.add_argument('--data-name', default='camra2011', help='dataset name')
-parser.add_argument('--data-appendix', default='', 
+parser.add_argument('--data-appendix', default='',
                     help='what to append to save-names when saving datasets')
-parser.add_argument('--save-appendix', default='', 
+parser.add_argument('--save-appendix', default='',
                     help='what to append to save-names when saving results')
-parser.add_argument('--max-train-num', type=int, default=None, 
+parser.add_argument('--max-train-num', type=int, default=None,
                     help='set maximum number of train data to use')
-parser.add_argument('--max-val-num', type=int, default=None, 
+parser.add_argument('--max-val-num', type=int, default=None,
                     help='set maximum number of val data to use')
-parser.add_argument('--max-test-num', type=int, default=None, 
+parser.add_argument('--max-test-num', type=int, default=None,
                     help='set maximum number of test data to use')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
@@ -85,21 +85,21 @@ parser.add_argument('--keep-old', action='store_true', default=False,
 parser.add_argument('--save-interval', type=int, default=10,
                     help='save model states every # epochs ')
 # subgraph extraction settings
-parser.add_argument('--hop', default=1, metavar='S', 
+parser.add_argument('--hop', default=1, metavar='S',
                     help='enclosing subgraph hop number')
-parser.add_argument('--sample-ratio', type=float, default=1.0, 
+parser.add_argument('--sample-ratio', type=float, default=1.0,
                     help='if < 1, subsample nodes per hop according to the ratio')
-parser.add_argument('--max-nodes-per-hop', default=10000, 
+parser.add_argument('--max-nodes-per-hop', default=10000,
                     help='if > 0, upper bound the # nodes per hop by another subsampling')
 parser.add_argument('--use-features', action='store_true', default=False,
                     help='whether to use node features (side information)')
 # edge dropout settings
-parser.add_argument('--adj-dropout', type=float, default=0.2, 
+parser.add_argument('--adj-dropout', type=float, default=0.2,
                     help='if not 0, random drops edges from adjacency matrix with this prob')
-parser.add_argument('--force-undirected', action='store_true', default=False, 
+parser.add_argument('--force-undirected', action='store_true', default=False,
                     help='in edge dropout, force (x, y) and (y, x) to be dropped together')
 # optimization settings
-parser.add_argument('--continue-from', type=int, default=None, 
+parser.add_argument('--continue-from', type=int, default=None,
                     help="from which epoch's checkpoint to continue training")
 parser.add_argument('--lr', type=float, default=1e-3, metavar='LR',
                     help='learning rate (default: 1e-3)')
@@ -113,7 +113,7 @@ parser.add_argument('--batch-size', type=int, default=50, metavar='N',
                     help='batch size during training')
 parser.add_argument('--test-freq', type=int, default=1, metavar='N',
                     help='test every n epochs')
-parser.add_argument('--ARR', type=float, default=0.001, 
+parser.add_argument('--ARR', type=float, default=0.001,
                     help='The adjacenct rating regularizer. If not 0, regularize the \
                     differences between graph convolution parameters W associated with\
                     adjacent ratings')
@@ -162,17 +162,17 @@ if args.standard_rating:
 if args.transfer:
     if args.data_name in ['flixster', 'ml_10m']: # original 0.5, 1, ..., 5
         post_rating_map = {
-            x: int(i // (10 / args.num_relations)) 
+            x: int(i // (10 / args.num_relations))
             for i, x in enumerate(np.arange(0.5, 5.01, 0.5).tolist())
         }
     elif args.data_name == 'yahoo_music':  # original 1, 2, ..., 100
         post_rating_map = {
-            x: int(i // (100 / args.num_relations)) 
+            x: int(i // (100 / args.num_relations))
             for i, x in enumerate(np.arange(1, 101).tolist())
         }
     else:  # assume other datasets have standard ratings 1, 2, 3, 4, 5
         post_rating_map = {
-            x: int(i // (5 / args.num_relations)) 
+            x: int(i // (5 / args.num_relations))
             for i, x in enumerate(np.arange(1, 6).tolist())
         }
 
@@ -195,7 +195,7 @@ if args.transfer == '':
 else:
     args.model_pos = os.path.join(args.transfer, 'model_checkpoint{}.pth'.format(args.epochs))
 if not os.path.exists(args.res_dir):
-    os.makedirs(args.res_dir) 
+    os.makedirs(args.res_dir)
 
 # if not args.keep_old and not args.transfer:
 #     # backup current main.py, model.py files
@@ -212,12 +212,12 @@ print('Command line input: ' + cmd_input + ' is saved.')
 if args.data_name in ['ml_1m', 'ml_10m', 'ml_25m']:
     if args.use_features:
         datasplit_path = (
-            'data/' + args.data_name + '/withfeatures_split_seed' + 
+            'data/' + args.data_name + '/withfeatures_split_seed' +
             str(args.data_seed) + '.pickle'
         )
     else:
         datasplit_path = (
-            'data/' + args.data_name + '/split_seed' + str(args.data_seed) + 
+            'data/' + args.data_name + '/split_seed' + str(args.data_seed) +
             '.pickle'
         )
 elif args.use_features:
@@ -228,20 +228,20 @@ else:
 if args.data_name in ['flixster', 'douban', 'yahoo_music']:
     (
         u_features, v_features, adj_train, train_labels, train_u_indices, train_v_indices,
-        val_labels, val_u_indices, val_v_indices, test_labels, test_u_indices, 
+        val_labels, val_u_indices, val_v_indices, test_labels, test_u_indices,
         test_v_indices, class_values
     ) = load_data_monti(args.data_name, args.testing, rating_map, post_rating_map)
 elif args.data_name in ['camra2011']:
     (
         u_features, v_features, adj_user, adj_train, adj_group_user, train_labels, train_w_indices, train_v_indices,
-        val_labels, val_w_indices, val_v_indices, test_labels, test_w_indices, 
+        val_labels, val_w_indices, val_v_indices, test_labels, test_w_indices,
         test_v_indices, class_values
     ) = load_data_monti(args.data_name, args.testing, rating_map, post_rating_map)
 elif args.data_name == 'ml_100k':
     print("Using official MovieLens split u1.base/u1.test with 20% validation...")
     (
         u_features, v_features, adj_train, train_labels, train_u_indices, train_v_indices,
-        val_labels, val_u_indices, val_v_indices, test_labels, test_u_indices, 
+        val_labels, val_u_indices, val_v_indices, test_labels, test_u_indices,
         test_v_indices, class_values
     ) = load_official_trainvaltest_split(
         args.data_name, args.testing, rating_map, post_rating_map, args.ratio
@@ -249,10 +249,10 @@ elif args.data_name == 'ml_100k':
 else:
     (
         u_features, v_features, adj_train, train_labels, train_u_indices, train_v_indices,
-        val_labels, val_u_indices, val_v_indices, test_labels, test_u_indices, 
+        val_labels, val_u_indices, val_v_indices, test_labels, test_u_indices,
         test_v_indices, class_values
     ) = create_trainvaltest_split(
-        args.data_name, 1234, args.testing, datasplit_path, True, True, rating_map, 
+        args.data_name, 1234, args.testing, datasplit_path, True, True, rating_map,
         post_rating_map, args.ratio
     )
 
@@ -264,9 +264,9 @@ Explanations of the above preprocessing:
     They are transformed to rating labels 0, 1, 2... acsendingly.
     Thus, to get the original rating from a rating label, apply: class_values[label]
     Note that train_labels etc. are all rating labels.
-    But the numbers in adj_train are rating labels + 1, why? Because to accomodate 
+    But the numbers in adj_train are rating labels + 1, why? Because to accomodate
     neutral ratings 0! Thus, to get any edge label from adj_train, remember to substract 1.
-    If testing=True, adj_train will include both train and val ratings, and all train 
+    If testing=True, adj_train will include both train and val ratings, and all train
     data will be the combination of train and val.
 '''
 
@@ -289,14 +289,14 @@ train_indices = (train_w_indices, train_v_indices)
 val_indices = (val_w_indices, val_v_indices)
 test_indices = (test_w_indices, test_v_indices)
 print('#train: %d, #val: %d, #test: %d' % (
-    len(train_w_indices), 
-    len(val_w_indices), 
-    len(test_w_indices), 
+    len(train_w_indices),
+    len(val_w_indices),
+    len(test_w_indices),
 ))
 
 '''
     Extract enclosing subgraphs to build the train/test or train/val/test graph datasets.
-    (Note that we must extract enclosing subgraphs for testmode and valmode separately, 
+    (Note that we must extract enclosing subgraphs for testmode and valmode separately,
     since the adj_train is different.)
 '''
 train_graphs, val_graphs, test_graphs = None, None, None
@@ -309,61 +309,61 @@ if args.reprocess:
         rmtree('data/{}{}/{}/val'.format(*data_combo))
     if os.path.isdir('data/{}{}/{}/test'.format(*data_combo)):
         rmtree('data/{}{}/{}/test'.format(*data_combo))
-# create dataset, either dynamically extract enclosing subgraphs, 
+# create dataset, either dynamically extract enclosing subgraphs,
 # or extract in preprocessing and save to disk.
 dataset_class = 'MyDynamicDataset' if args.dynamic_train else 'MyDataset'
 train_graphs = eval(dataset_class)(
     'data/{}{}/{}/train'.format(*data_combo),
     adj_user,
     adj_train,
-    adj_group_user, 
-    train_indices, 
-    train_labels, 
-    args.hop, 
-    args.sample_ratio, 
-    args.max_nodes_per_hop, 
-    u_features, 
-    v_features, 
-    class_values, 
+    adj_group_user,
+    train_indices,
+    train_labels,
+    args.hop,
+    args.sample_ratio,
+    args.max_nodes_per_hop,
+    u_features,
+    v_features,
+    class_values,
     max_num=args.max_train_num
 )
 dataset_class = 'MyDynamicDataset' if args.dynamic_test else 'MyDataset'
 test_graphs = eval(dataset_class)(
     'data/{}{}/{}/test'.format(*data_combo),
-    adj_train, 
-    test_indices, 
-    test_labels, 
-    args.hop, 
-    args.sample_ratio, 
-    args.max_nodes_per_hop, 
-    u_features, 
-    v_features, 
-    class_values, 
+    adj_train,
+    test_indices,
+    test_labels,
+    args.hop,
+    args.sample_ratio,
+    args.max_nodes_per_hop,
+    u_features,
+    v_features,
+    class_values,
     max_num=args.max_test_num
 )
 if not args.testing:
     dataset_class = 'MyDynamicDataset' if args.dynamic_val else 'MyDataset'
     val_graphs = eval(dataset_class)(
         'data/{}{}/{}/val'.format(*data_combo),
-        adj_train, 
-        val_indices, 
-        val_labels, 
-        args.hop, 
-        args.sample_ratio, 
-        args.max_nodes_per_hop, 
-        u_features, 
-        v_features, 
-        class_values, 
+        adj_train,
+        val_indices,
+        val_labels,
+        args.hop,
+        args.sample_ratio,
+        args.max_nodes_per_hop,
+        u_features,
+        v_features,
+        class_values,
         max_num=args.max_val_num
     )
 
 # Determine testing data (on which data to evaluate the trained model
-if not args.testing: 
+if not args.testing:
     test_graphs = val_graphs
 
 print('Used #train graphs: %d, #test graphs: %d' % (
-    len(train_graphs), 
-    len(test_graphs), 
+    len(train_graphs),
+    len(test_graphs),
 ))
 
 '''
@@ -372,13 +372,13 @@ print('Used #train graphs: %d, #test graphs: %d' % (
 if False:
     # DGCNN_RS GNN model
     model = DGCNN_RS(
-        train_graphs, 
-        latent_dim=[32, 32, 32, 1], 
-        k=0.6, 
-        num_relations=len(class_values), 
-        num_bases=4, 
-        regression=True, 
-        adj_dropout=args.adj_dropout, 
+        train_graphs,
+        latent_dim=[32, 32, 32, 1],
+        k=0.6,
+        num_relations=len(class_values),
+        num_bases=4,
+        regression=True,
+        adj_dropout=args.adj_dropout,
         force_undirected=args.force_undirected
     )
     # record the k used in sortpooling
@@ -395,47 +395,47 @@ else:
         num_relations = len(class_values)
         multiply_by = 1
     model = IGMC(
-        train_graphs, 
-        latent_dim=[32, 32, 32, 32], 
-        num_relations=num_relations, 
-        num_bases=4, 
-        regression=True, 
-        adj_dropout=args.adj_dropout, 
-        force_undirected=args.force_undirected, 
-        side_features=args.use_features, 
-        n_side_features=n_features, 
+        train_graphs,
+        latent_dim=[32, 32, 32, 32],
+        num_relations=num_relations,
+        num_bases=4,
+        regression=True,
+        adj_dropout=args.adj_dropout,
+        force_undirected=args.force_undirected,
+        side_features=args.use_features,
+        n_side_features=n_features,
         multiply_by=multiply_by
     )
     total_params = sum(p.numel() for param in model.parameters() for p in param)
     print(f'Total number of parameters is {total_params}')
-    
+
 
 if not args.no_train:
     train_multiple_epochs(
         train_graphs,
         test_graphs,
         model,
-        args.epochs, 
-        args.batch_size, 
-        args.lr, 
-        lr_decay_factor=args.lr_decay_factor, 
-        lr_decay_step_size=args.lr_decay_step_size, 
-        weight_decay=0, 
-        ARR=args.ARR, 
-        test_freq=args.test_freq, 
-        logger=logger, 
-        continue_from=args.continue_from, 
+        args.epochs,
+        args.batch_size,
+        args.lr,
+        lr_decay_factor=args.lr_decay_factor,
+        lr_decay_step_size=args.lr_decay_step_size,
+        weight_decay=0,
+        ARR=args.ARR,
+        test_freq=args.test_freq,
+        logger=logger,
+        continue_from=args.continue_from,
         res_dir=args.res_dir
     )
 
 if args.visualize:
     model.load_state_dict(torch.load(args.model_pos))
     visualize(
-        model, 
-        test_graphs, 
-        args.res_dir, 
-        args.data_name, 
-        class_values, 
+        model,
+        test_graphs,
+        args.res_dir,
+        args.data_name,
+        class_values,
         sort_by='prediction'
     )
     if args.transfer:
@@ -445,11 +445,11 @@ else:
     if args.ensemble:
         if args.data_name == 'ml_1m':
             start_epoch, end_epoch, interval = args.epochs-15, args.epochs, 5
-        else: 
+        else:
             start_epoch, end_epoch, interval = args.epochs-30, args.epochs, 10
         if args.transfer:
             checkpoints = [
-                os.path.join(args.transfer, 'model_checkpoint%d.pth' %x) 
+                os.path.join(args.transfer, 'model_checkpoint%d.pth' %x)
                 for x in range(start_epoch, end_epoch+1, interval)
             ]
             epoch_info = 'transfer {}, ensemble of range({}, {}, {})'.format(
@@ -457,18 +457,18 @@ else:
             )
         else:
             checkpoints = [
-                os.path.join(args.res_dir, 'model_checkpoint%d.pth' %x) 
+                os.path.join(args.res_dir, 'model_checkpoint%d.pth' %x)
                 for x in range(start_epoch, end_epoch+1, interval)
             ]
             epoch_info = 'ensemble of range({}, {}, {})'.format(
                 start_epoch, end_epoch, interval
             )
         rmse = test_once(
-            test_graphs, 
-            model, 
-            args.batch_size, 
-            logger=None, 
-            ensemble=True, 
+            test_graphs,
+            model,
+            args.batch_size,
+            logger=None,
+            ensemble=True,
             checkpoints=checkpoints
         )
         print('Ensemble test rmse is: {:.6f}'.format(rmse))
@@ -485,6 +485,3 @@ else:
         'test_rmse': rmse,
     }
     logger(eval_info, None, None)
-
-
-

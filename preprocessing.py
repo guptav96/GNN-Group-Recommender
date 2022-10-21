@@ -9,6 +9,8 @@ import os
 import h5py
 import pandas as pd
 import pdb
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 # from data_utils import load_data, map_data, download_dataset
 
 
@@ -307,8 +309,8 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
     pairs_nonzero_test = np.array([[m, v] for m, v in zip(np.where(O_group_test)[0], np.where(O_group_test)[1])])
     idx_nonzero_test = np.array([m * num_items + v for m, v in pairs_nonzero_test])
 
-    pairs_nonzero_user_item = np.array([[u, v] for m, v in zip(np.where(M_user)[0], np.where(M_user)[1])])
-    idx_nonzero_user_item = np.array([u * num_items + v for m, v in pairs_nonzero_user_item])
+    pairs_nonzero_user_item = np.array([[u, v] for u, v in zip(np.where(M_user)[0], np.where(M_user)[1])])
+    idx_nonzero_user_item = np.array([u * num_items + v for u, v in pairs_nonzero_user_item])
 
     # Internally shuffle training set (before splitting off validation set)
     rand_idx = list(range(len(idx_nonzero_train)))
@@ -349,7 +351,7 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
     class_values = np.sort(np.unique(ratings))
 
     # make user-item adjacency matrix
-    rating_ux = np.full((num_users, num_items), neutral_rating, dtype=np.int32)
+    rating_ux = np.zeros(num_users * num_items, dtype=np.float32)
     rating_ux[idx_nonzero_user_item] = labels_user[idx_nonzero_user_item].astype(np.float32) + 1.
 
     # make training adjacency matrix
@@ -371,6 +373,9 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
     if v_features is not None: #not required
         v_features = sp.csr_matrix(v_features)
         print("Item features shape: " + str(v_features.shape))
+
+    # print(rating_mx_train)
+    # print(rating_ux)
 
     return u_features, v_features, rating_ux, rating_mx_train, group_user_adj, train_labels, m_train_idx, v_train_idx, \
         val_labels, m_val_idx, v_val_idx, test_labels, m_test_idx, v_test_idx, class_values
