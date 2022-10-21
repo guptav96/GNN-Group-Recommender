@@ -2,13 +2,14 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+import scipy
 import scipy.sparse as sp
 import pickle as pkl
 import os
 import h5py
 import pandas as pd
 import pdb
-from data_utils import load_data, map_data, download_dataset
+# from data_utils import load_data, map_data, download_dataset
 
 
 def normalize_features(feat):
@@ -38,7 +39,8 @@ def load_matlab_file(path_file, name_field):
     warning:
         '.mat' files should be saved in the '-v7.3' format
     """
-    db = h5py.File(path_file, 'r')
+    # db = h5py.File(path_file, 'r')
+    db = scipy.io.loadmat(path_file)
     ds = db[name_field]
     try:
         if 'ir' in ds.keys():
@@ -48,9 +50,9 @@ def load_matlab_file(path_file, name_field):
             out = sp.csc_matrix((data, ir, jc)).astype(np.float32)
     except AttributeError:
         # Transpose in case is a dense matrix because of the row- vs column- major ordering between python and matlab
-        out = np.asarray(ds).astype(np.float32).T
+        out = np.asarray(ds).astype(np.float32)
 
-    db.close()
+    # db.close()
 
     return out
 
@@ -241,7 +243,9 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
         Wcol = load_matlab_file(path_dataset, 'W_tracks')
         u_features = np.eye(num_users)
         v_features = Wcol
-    # elif dataset == 'camra2011':
+    elif dataset == 'camra2011':
+        u_features = None
+        v_features = None
 
     user_nodes_ratings = np.where(M_user)[0]
     item_user_nodes_ratings = np.where(M_user)[1]
@@ -261,7 +265,7 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
     user_nodes = user_nodes_ratings
     item_user_nodes = item_user_nodes_ratings
 
-    group_nodes = group_nodes_rantings
+    group_nodes = group_nodes_ratings
     item_group_nodes = item_group_nodes_ratings
 
     print('number of users = ', len(set(user_nodes)))
@@ -297,7 +301,7 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
     num_val = int(np.ceil(num_train * 0.2))
     num_train = num_train - num_val
 
-    pairs_nonzero_train = np.array([[m, v] for m, v in zip(np.where(O_group_train)[0], np.where(O_group_test)[1])])
+    pairs_nonzero_train = np.array([[m, v] for m, v in zip(np.where(O_group_train)[0], np.where(O_group_train)[1])])
     idx_nonzero_train = np.array([m * num_items + v for m, v in pairs_nonzero_train])
 
     pairs_nonzero_test = np.array([[m, v] for m, v in zip(np.where(O_group_test)[0], np.where(O_group_test)[1])])
@@ -352,7 +356,7 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
     rating_mx_train = sp.csr_matrix(rating_mx_train.reshape(num_groups, num_items))
 
 
-    if u_features is not None: #not reuired
+    if u_features is not None: #not required
         u_features = sp.csr_matrix(u_features)
         print("User features shape: " + str(u_features.shape))
 

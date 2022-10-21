@@ -6,6 +6,7 @@ user_test = '/home/kaykay/Attentive-Group-Recommendation/data/CAMRa2011/userRati
 group_train = '/home/kaykay/Attentive-Group-Recommendation/data/CAMRa2011/groupRatingTrain.txt'
 group_test = '/home/kaykay/Attentive-Group-Recommendation/data/CAMRa2011/groupRatingTest.txt'
 file_group_user = '/home/kaykay/Attentive-Group-Recommendation/data/CAMRa2011/groupMember.txt'
+
 M_user = np.zeros((602, 7710))
 M_group = np.zeros((290, 7710))
 M_group_user = np.zeros((290, 602))
