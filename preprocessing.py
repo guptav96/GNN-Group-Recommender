@@ -211,7 +211,7 @@ def load_data_monti(dataset, testing=False, rating_map=None, post_rating_map=Non
     if post_rating_map is given, apply this map to the processed rating_mx_train without affecting the labels
     """
 
-    path_dataset = 'data/' + dataset + '/train_test.mat'
+    path_dataset = 'raw_data/' + dataset + '/train_test.mat'
 
     # camr dataset
     # M_user: (602, 7710), M_group : (290, 7710), M_group_user: (290, 602)
