@@ -482,7 +482,7 @@ else:
             model.load_state_dict(torch.load(args.model_pos))
             rmse = test_once(test_graphs, model, args.batch_size, logger=None)
             epoch_info = 'transfer {}, epoch {}'.format(args.transfer, args.epoch)
-        print('Test rmse is: {:.6f}'.format(rmse))
+            print('Test rmse is: {:.6f}'.format(rmse))
 
     eval_info = {
         'epoch': epoch_info,
