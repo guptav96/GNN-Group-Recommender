@@ -231,13 +231,13 @@ def subgraph_extraction_labeling(ind, A_group_item_row, A_group_item_col, A_user
     group_dist, item_dist = [0], [0]
     group_visited, item_visited = set([ind[0]]), set([ind[1]])
     group_fringe, item_fringe = set([ind[0]]), set([ind[1]])
-    user_fringe = neighbors(group_visited, A_group_user_row)
-    user_fringe_target_item = neighbors(item_visited, A_user_item_col)
+    user_fringe = neighbors(group_fringe, A_group_user_row)
+    user_fringe_target_item = neighbors(item_fringe, A_user_item_col)
     user_visited = user_fringe.union(user_fringe_target_item)
+    user_fringe_target_uniq = user_fringe_target_item - user_fringe
     user_dist = [0] * len(user_fringe)
-    user_dist = user_dist + [1] * len(user_fringe_target_item)
-    user_nodes = list(user_fringe)
-    user_nodes = user_nodes + list(user_fringe_target_item)
+    user_dist = user_dist + [1] * len(user_fringe_target_uniq)
+    user_nodes = list(user_fringe) + list(user_fringe_target_uniq)
     for dist in range(1, 2):
         item_fringe, group_fringe = neighbors(group_fringe, A_group_item_row), neighbors(item_fringe, A_group_item_col)
         group_fringe = group_fringe - group_visited
@@ -247,9 +247,7 @@ def subgraph_extraction_labeling(ind, A_group_item_row, A_group_item_col, A_user
         user_fringe_1, user_fringe_2 = neighbors(group_visited, A_group_user_row), neighbors(item_visited, A_user_item_col)
         # print("len user fringe 1, group visited", len(user_fringe_1), len(group_visited))
         # print("len user fringe 2, item  visited", len(user_fringe_2), len(item_visited))
-        user_fringe_1 = user_fringe_1 - user_fringe
-        user_fringe_2 = user_fringe_2 - user_fringe_target_item
-        user_fringe = user_fringe_1
+        user_fringe = user_fringe_1 - user_visited
         user_visited = user_visited.union(user_fringe)
         # print("len user fringe_1, fringe_2, fringe, visited: ", len(user_fringe_1), len(user_fringe_2), len(user_fringe), len(user_visited))
         if sample_ratio < 1.0: # not required
