@@ -276,40 +276,15 @@ def visualize(model, graphs, res_dir, data_name, class_values, num=5, sort_by='p
                      3: 'xkcd:lightblue', 4: 'y', 5: 'g'}
     plt.axis('off')
     f = plt.figure(figsize=(20, 10))
-    axs = f.subplots(2, num)
-    cmap = plt.cm.get_cmap('rainbow')
+    # axs = f.subplots(2, num)
+    # cmap = plt.cm.get_cmap('rainbow')
     vmin, vmax = min(class_values), max(class_values)
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
-    sm.set_array([])
+    # sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+    # sm.set_array([])
     for i, g in enumerate(highest + lowest):
-        g_nodes = set([x for x, y in g.nodes(data=True) if y['type'] % 3 == 0])
-        v_nodes = set([x for x, y in g.nodes(data=True) if y['type'] % 3 == 1])
-        u_nodes = set([x for x, y in g.nodes(data=True) if y['type'] % 3 == 2])
-        g0, v0, u0 = 0, len(g_nodes), len(g_nodes) + len(v_nodes)
-
-        BG = nx.Graph()
-        BG.add_nodes_from(g0, bipartite = 0)
-        BG.add_nodes_from(g_nodes - g0, bipartite = 1)
-        BG.add_nodes_from(v0, bipartite = 2)
-        BG.add_nodes_from(v_nodes - v0, bipartite = 3)
-        BG.add_nodes_from(u_nodes, bipartite = 4)
-
-        BG.add_edges_from(g.edges)
-        nodes = BG.nodes()
-
-        nodes_0  = set([n for n in nodes if  BG.nodes[n]['bipartite']==0])
-        nodes_1  = set([n for n in nodes if  BG.nodes[n]['bipartite']==1]) 
-        nodes_2  = set([n for n in nodes if  BG.nodes[n]['bipartite']==2])
-        nodes_3  = set([n for n in nodes if  BG.nodes[n]['bipartite']==3])
-        nodes_4  = set([n for n in nodes if  BG.nodes[n]['bipartite']==4])
-
-        pos = dict()
-        pos.update((n, (1, y)) for y, n in enumerate(nodes_0))
-        pos.update((n, (2, y)) for y, n in enumerate(nodes_1))
-        pos.update((n, (3, y)) for y, n in enumerate(nodes_2))
-        pos.update((n, (4, y)) for y, n in enumerate(nodes_3))
-        pos.update((n, (5, y)) for y, n in enumerate(nodes_4))
-        # pos = nx.drawing.layout.bipartite_layout(g, u_nodes)
+        pos = nx.drawing.layout.multipartite_layout(g, subset_key="layer")
+        node_colors = [type_to_color[y] for x, y in nx.get_node_attributes(g, 'type').items()]
+        nx.draw(g, pos, node_color = node_colors, with_labels = False)
         # bottom_u_node = min(pos, key=lambda x: (pos[x][0], pos[x][1]))
         # bottom_v_node = min(pos, key=lambda x: (-pos[x][0], pos[x][1]))
         # # swap u0 and v0 with bottom nodes if they are not already
@@ -322,14 +297,14 @@ def visualize(model, graphs, res_dir, data_name, class_values, num=5, sort_by='p
         # edge_types = nx.get_edge_attributes(g, 'type')
         # edge_types = [class_values[edge_types[x]] for x in g.edges()]
         # axs[i//num, i%num].axis('off')
-        nx.draw_networkx(BG, pos, 
-                #labels=labels, 
-                with_labels=False, 
-                node_size=150, 
-                # node_color=node_colors, edge_color=edge_types, 
-                # ax=axs[i//num, i%num], edge_cmap=cmap, edge_vmin=vmin, edge_vmax=vmax, 
-                )
-        # make u0 v0 on top of other nodes
+        # nx.draw_networkx(g, pos, 
+        #         #labels=labels, 
+        #         with_labels=False, 
+        #         node_size=150, 
+        #         node_color=node_colors, edge_color=edge_types, 
+        #         ax=axs[i//num, i%num], edge_cmap=cmap, edge_vmin=vmin, edge_vmax=vmax, 
+        #         )
+        # # make u0 v0 on top of other nodes
         # nx.draw_networkx_nodes(g, {u0: pos[u0]}, nodelist=[u0], node_size=150,
         #         node_color='xkcd:red', ax=axs[i//num, i%num])
         # nx.draw_networkx_nodes(g, {v0: pos[v0]}, nodelist=[v0], node_size=150,
@@ -337,10 +312,11 @@ def visualize(model, graphs, res_dir, data_name, class_values, num=5, sort_by='p
         # axs[i//num, i%num].set_title('{:.4f} ({:})'.format(
         #     scores[i], ys[i]), x=0.5, y=-0.05, fontsize=20
         # )
-    f.subplots_adjust(right=0.85)
-    cbar_ax = f.add_axes([0.88, 0.15, 0.02, 0.7])
-    if len(class_values) > 20:
-        class_values = np.linspace(min(class_values), max(class_values), 20, dtype=int).tolist()
-    cbar = plt.colorbar(sm, cax=cbar_ax, ticks=class_values)
-    cbar.ax.tick_params(labelsize=22)
-    f.savefig(os.path.join(res_dir, "visualization_{}_{}.pdf".format(data_name, sort_by)), bbox_inches='tight')
+        break
+    # f.subplots_adjust(right=0.85)
+    # cbar_ax = f.add_axes([0.88, 0.15, 0.02, 0.7])
+    # if len(class_values) > 20:
+    #     class_values = np.linspace(min(class_values), max(class_values), 20, dtype=int).tolist()
+    # cbar = plt.colorbar(sm, cax=cbar_ax, ticks=class_values)
+    # cbar.ax.tick_params(labelsize=22)
+    plt.savefig(os.path.join(res_dir, "visualization_{}_{}.pdf".format(data_name, sort_by)), bbox_inches='tight')

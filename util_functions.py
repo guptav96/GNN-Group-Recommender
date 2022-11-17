@@ -362,11 +362,19 @@ def one_hot(idx, length):
     x[np.arange(len(idx)), idx] = 1.0
     return x
 
-
 def PyGGraph_to_nx(data):
     edges = list(zip(data.edge_index[0, :].tolist(), data.edge_index[1, :].tolist()))
     g = nx.from_edgelist(edges)
-    g.add_nodes_from(range(len(data.x)))  # in case some nodes are isolated
+
+    node_labels = torch.argmax(data.x, 1)
+    group_nodes = node_labels[np.where(node_labels%3==0)]
+    item_nodes = node_labels[np.where(node_labels%3==1)]
+    user_nodes = node_labels[np.where(node_labels%3==2)]
+    layers = [group_nodes, item_nodes, user_nodes]
+    
+    for (i, layer) in enumerate(layers):
+      g.add_nodes_from(layer, layer=i)
+
     # transform r back to rating label
     edge_types = {(u, v): data.edge_type[i].item() for i, (u, v) in enumerate(edges)}
     nx.set_edge_attributes(g, name='type', values=edge_types)
@@ -374,3 +382,15 @@ def PyGGraph_to_nx(data):
     nx.set_node_attributes(g, name='type', values=node_types)
     g.graph['rating'] = data.y.item()
     return g
+
+# def PyGGraph_to_nx(data):
+#     edges = list(zip(data.edge_index[0, :].tolist(), data.edge_index[1, :].tolist()))
+#     g = nx.from_edgelist(edges)
+#     g.add_nodes_from(range(len(data.x)))  # in case some nodes are isolated
+#     # transform r back to rating label
+#     edge_types = {(u, v): data.edge_type[i].item() for i, (u, v) in enumerate(edges)}
+#     nx.set_edge_attributes(g, name='type', values=edge_types)
+#     node_types = dict(zip(range(data.num_nodes), torch.argmax(data.x, 1).tolist()))
+#     nx.set_node_attributes(g, name='type', values=node_types)
+#     g.graph['rating'] = data.y.item()
+#     return g
