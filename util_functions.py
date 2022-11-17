@@ -288,7 +288,6 @@ def subgraph_extraction_labeling(ind, A_group_item_row, A_group_item_col, A_user
     user_group += len(group_nodes) + len(item_nodes)
     rating_group = rating_group - 1  # transform r back to rating label
     rating_user = rating_user - 1
-    rating_max = max(np.max(rating_user), np.max(rating_group))
     num_nodes = len(group_nodes) + len(item_nodes) + len(user_nodes)
     node_labels = [x*3 for x in group_dist] + [x*3+1 for x in item_dist] + [x*3+2 for x in user_dist]
     max_node_label = 3*h + 2
@@ -323,15 +322,14 @@ def subgraph_extraction_labeling(ind, A_group_item_row, A_group_item_col, A_user
         if u_features is not None and v_features is not None:
             node_features = [u_features[0], v_features[0]]
 
-    return group, item_group, user, item_user, group_user, user_group, rating_group, rating_user, rating_max, label_group_user, node_labels, max_node_label, y, node_features
+    return group, item_group, user, item_user, group_user, user_group, rating_group, rating_user, label_group_user, node_labels, max_node_label, y, node_features
 
 
-def construct_pyg_graph(group, item_group, user, item_user, group_user, user_group, rating_group, rating_user, rating_max, label_group_user, node_labels, max_node_label, y, node_features):
+def construct_pyg_graph(group, item_group, user, item_user, group_user, user_group, rating_group, rating_user, label_group_user, node_labels, max_node_label, y, node_features):
     group, item_group, user, item_user, group_user, user_group = torch.LongTensor(group), torch.LongTensor(item_group), torch.LongTensor(user), torch.LongTensor(item_user), torch.LongTensor(group_user), torch.LongTensor(user_group)
-    # Normalising edge label for ratings to 0-1
-    rating_group = torch.FloatTensor(rating_group)/rating_max
-    rating_user = torch.FloatTensor(rating_user)/rating_max
-    label_group_user = torch.LongTensor(label_group_user)
+    rating_group = torch.FloatTensor(rating_group)
+    rating_user = torch.FloatTensor(rating_user)
+    label_group_user = 20 * torch.LongTensor(label_group_user) # change it later to size of class values
     edge_index = torch.stack([torch.cat([group, item_group, user, item_user, group_user, user_group]), torch.cat([item_group, group, item_user, user, user_group, group_user])], 0)
     edge_type = torch.cat([rating_group, rating_group, rating_user, rating_user, label_group_user, label_group_user])
     x = torch.FloatTensor(one_hot(node_labels, max_node_label+1))

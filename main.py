@@ -398,6 +398,7 @@ else:
     else:
         num_relations = len(class_values)
         multiply_by = 1
+    num_relations += 1 # an additional relation for group-user edge type
     model = IGMC(
         train_graphs,
         latent_dim=[32, 32, 32, 32],
