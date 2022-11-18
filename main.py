@@ -82,7 +82,7 @@ parser.add_argument('--dynamic-test', action='store_true', default=False)
 parser.add_argument('--dynamic-val', action='store_true', default=False)
 parser.add_argument('--keep-old', action='store_true', default=False,
                     help='if True, do not overwrite old .py files in the result folder')
-parser.add_argument('--save-interval', type=int, default=10,
+parser.add_argument('--save-interval', type=int, default=5,
                     help='save model states every # epochs ')
 # subgraph extraction settings
 parser.add_argument('--hop', default=1, metavar='S',
@@ -280,7 +280,7 @@ else:
     n_features = 0
 
 if args.debug:  # use a small number of data to debug
-    num_data = 1000
+    num_data = 30000
     train_w_indices, train_v_indices = train_w_indices[:num_data], train_v_indices[:num_data]
     val_w_indices, val_v_indices = val_w_indices[:num_data], val_v_indices[:num_data]
     test_w_indices, test_v_indices = test_w_indices[:num_data], test_v_indices[:num_data]
