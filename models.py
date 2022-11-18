@@ -202,9 +202,16 @@ class IGMC(GNN):
             concat_states.append(x)
         concat_states = torch.cat(concat_states, 1)
 
-        users = data.x[:, 0] == 1
+        groups = data.x[:, 0] == 1
         items = data.x[:, 1] == 1
-        x = torch.cat([concat_states[users], concat_states[items]], 1)
+        users = torch.empty(concat_states[items].shape)
+        # use batch information to extract user information for each batch
+        for idx, batch_index in enumerate(batch.unique()):
+            batch_data_index = torch.where(batch == batch_index)[0]
+            batch_users = data.x[batch_data_index, 2] == 1
+            users[idx] = torch.mean(concat_states[batch_users], 0)
+
+        x = torch.cat([concat_states[groups], concat_states[items], users], 1)
         if self.side_features:
             x = torch.cat([x, data.u_feature, data.v_feature], 1)
 
