@@ -204,13 +204,14 @@ class IGMC(GNN):
 
         groups = data.x[:, 0] == 1
         items = data.x[:, 1] == 1
-        users = torch.empty(concat_states[items].shape)
+        users = torch.empty(concat_states[items].shape).cuda()
+        all_batch_users = data.x[:, 2] == 1
         # use batch information to extract user information for each batch
         for idx, batch_index in enumerate(batch.unique()):
-            batch_data_index = torch.where(batch == batch_index)[0]
-            batch_users = data.x[batch_data_index, 2] == 1
+            batch_data_index = batch == batch_index
+            batch_users = torch.logical_and(batch_data_index, all_batch_users)
             users[idx] = torch.mean(concat_states[batch_users], 0)
-
+        # x = torch.cat([concat_states[groups], concat_states[items]], 1)
         x = torch.cat([concat_states[groups], concat_states[items], users], 1)
         if self.side_features:
             x = torch.cat([x, data.u_feature, data.v_feature], 1)
